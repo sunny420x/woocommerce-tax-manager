@@ -20,6 +20,8 @@ function tax_manager_menu()
     );
 }
 
+add_action('admin_menu', 'tax_manager_menu');
+
 function tax_manager_page() {
 ?>
 <style>
@@ -112,6 +114,9 @@ a.menu-btn {
 
                     <h2>ภาษีมูลค่าเพิ่มทั่วไป</h2>
 
+                    <input type="checkbox" value="yes" name="tax_enable" <?php if(get_option("tax_enable") == "yes") { echo "checked"; } ?> > ร้านค้านี้มีการเก็บภาษีมูลค่าเพิ่ม
+                    <br><br>
+
                     <label for="tax_percent">ร้อยละจำนวนภาษีมูลค่าเพิ่ม</label>: 
                     <input type="number" name="tax_percent" id="tax_percent" value="<?=get_option("tax_percent");?>"> %
                     <br><br>
@@ -151,6 +156,7 @@ add_action('admin_init', 'tax_manager_settings_init');
 
 function tax_manager_settings_init()
 {
+    register_setting('tax_manager_settings_group', 'tax_enable');
     register_setting('tax_manager_settings_group', 'tax_option');
     register_setting('tax_manager_settings_group', 'tax_percent');
     register_setting('tax_manager_settings_group', 'credit_card_fee_enable');
@@ -159,110 +165,110 @@ function tax_manager_settings_init()
     register_setting('tax_manager_settings_group', 'tax_phone_number');
 }
 
-add_action('admin_menu', 'tax_manager_menu');
-
-if(get_option("tax_option") == "addition_tax") {
-    /**
-     * เพิ่มค่าธรรมเนียมจากยอดรวมตะกร้าใน WooCommerce
-     */
-    add_action( 'woocommerce_cart_calculate_fees', 'add_custom_percentage_fee', 20, 1 );
-
-    function add_custom_percentage_fee( $cart ) {
-        if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
-
-        // คำนวณยอดรวมของสินค้าในตะกร้า
-        $subtotal = $cart->subtotal;
-        
-        // คำนวณ 7%
-        $fee_amount = $subtotal * ((float) get_option("tax_percent") / 100);
-
-        // เพิ่มค่าธรรมเนียมเข้าไปในตะกร้า
-        // พารามิเตอร์: ชื่อค่าธรรมเนียม, จำนวนเงิน, ต้องเสียภาษีเพิ่มไหม (false)
-        $cart->add_fee( __( 'ค่าธรรมเนียม '.get_option("tax_percent").'%', 'woocommerce' ), $fee_amount, false );
-    }
-}
-
-if(get_option("tax_option") == "in_price") {
-    /**
-     * แสดงราคาก่อนหักภาษี (Pre-tax price) ในหน้าตะกร้า
-     */
-    add_filter( 'woocommerce_cart_item_name', 'display_pre_tax_price_in_cart', 10, 3 );
-
-    function display_pre_tax_price_in_cart( $product_name, $cart_item, $cart_item_key ) {
-        if ( is_cart() || is_checkout() ) {
-            $price_with_tax = $cart_item['data']->get_price();
+if(get_option("tax_enable", 'no') == "yes") {
+    if(get_option("tax_option") == "addition_tax") {
+        /**
+         * เพิ่มค่าธรรมเนียมจากยอดรวมตะกร้าใน WooCommerce
+         */
+        add_action( 'woocommerce_cart_calculate_fees', 'add_custom_percentage_fee', 20, 1 );
+    
+        function add_custom_percentage_fee( $cart ) {
+            if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
+    
+            // คำนวณยอดรวมของสินค้าในตะกร้า
+            $subtotal = $cart->subtotal;
             
-            $price_before_tax = $price_with_tax / (((float) get_option("tax_percent") / 100) + 1);
-            
-            $formatted_price = wc_price( $price_before_tax );
-            
-            $product_name .= '<br><small style="color: #666; font-weight: normal;">' . 
-                            __( 'ราคาก่อนบวกภาษีมูลค่าเพิ่ม: ', 'woocommerce' ) . $formatted_price . 
-                            '</small>';
+            // คำนวณ 7%
+            $fee_amount = $subtotal * ((float) get_option("tax_percent") / 100);
+    
+            // เพิ่มค่าธรรมเนียมเข้าไปในตะกร้า
+            // พารามิเตอร์: ชื่อค่าธรรมเนียม, จำนวนเงิน, ต้องเสียภาษีเพิ่มไหม (false)
+            $cart->add_fee( __( 'ค่าธรรมเนียม '.get_option("tax_percent").'%', 'woocommerce' ), $fee_amount, false );
         }
-        return $product_name;
     }
-
-    /**
-     * แสดงราคาก่อนหักภาษี (รวมจำนวนสินค้า) ในหน้าตะกร้า
-     */
-    add_filter( 'woocommerce_cart_item_subtotal', 'display_pre_tax_price_right_side', 10, 3 );
-
-    function display_pre_tax_price_right_side( $subtotal, $cart_item, $cart_item_key ) {
-        // ตรวจสอบหน้าและเงื่อนไข
-        if ( ! ( is_cart() || is_checkout() ) ) return $subtotal;
-        if ( get_option("tax_option") !== 'in_price' ) return $subtotal;
-
-        // ดึงราคาต่อหน่วย และ จำนวนสินค้า
-        $price_with_tax = $cart_item['data']->get_price();
-        $quantity       = $cart_item['quantity'];
-        
-        // คำนวณราคารวม (ราคาสินค้า * จำนวน) แล้วค่อยนำมาถอดภาษี
-        $total_price_with_tax = $price_with_tax * $quantity;
-        $tax_percent          = (float) get_option("tax_percent", 7);
-        
-        $total_price_before_tax = $total_price_with_tax / (($tax_percent / 100) + 1);
-        
-        // แสดงผล
-        $subtotal .= '<br><small style="color: #666; font-size: 0.85em; display: block; white-space: nowrap;">' . 
-                    'ก่อนบวกภาษี: ' . wc_price($total_price_before_tax) . 
-                    '</small>';
-
-        return $subtotal;
-    }
-
-    add_action( 'woocommerce_cart_totals_before_order_total', 'display_cart_totals_before_tax' );
-
-    function display_cart_totals_before_tax() {
-        // ตรวจสอบ Option (ต้องเป็นโหมดรวมภาษีแล้ว)
-        if ( get_option("tax_option") !== 'in_price' ) return;
-
-        $cart = WC()->cart;
-        $tax_percent = (float) get_option("tax_percent", 7);
-        $total_before_tax = 0;
-
-        // ลูปผ่านสินค้าทุกชิ้นในตะกร้าเพื่อถอดภาษีทีละรายการ
-        foreach ( $cart->get_cart() as $cart_item ) {
+    
+    if(get_option("tax_option") == "in_price") {
+        /**
+         * แสดงราคาก่อนหักภาษี (Pre-tax price) ในหน้าตะกร้า
+         */
+        add_filter( 'woocommerce_cart_item_name', 'display_pre_tax_price_in_cart', 10, 3 );
+    
+        function display_pre_tax_price_in_cart( $product_name, $cart_item, $cart_item_key ) {
+            if ( is_cart() || is_checkout() ) {
+                $price_with_tax = $cart_item['data']->get_price();
+                
+                $price_before_tax = $price_with_tax / (((float) get_option("tax_percent") / 100) + 1);
+                
+                $formatted_price = wc_price( $price_before_tax );
+                
+                $product_name .= '<br><small style="color: #666; font-weight: normal;">' . 
+                                __( 'ราคาก่อนบวกภาษีมูลค่าเพิ่ม: ', 'woocommerce' ) . $formatted_price . 
+                                '</small>';
+            }
+            return $product_name;
+        }
+    
+        /**
+         * แสดงราคาก่อนหักภาษี (รวมจำนวนสินค้า) ในหน้าตะกร้า
+         */
+        add_filter( 'woocommerce_cart_item_subtotal', 'display_pre_tax_price_right_side', 10, 3 );
+    
+        function display_pre_tax_price_right_side( $subtotal, $cart_item, $cart_item_key ) {
+            // ตรวจสอบหน้าและเงื่อนไข
+            if ( ! ( is_cart() || is_checkout() ) ) return $subtotal;
+            if ( get_option("tax_option") !== 'in_price' ) return $subtotal;
+    
+            // ดึงราคาต่อหน่วย และ จำนวนสินค้า
             $price_with_tax = $cart_item['data']->get_price();
             $quantity       = $cart_item['quantity'];
             
-            // คำนวณราคาต่อชิ้นถอดภาษี แล้วคูณจำนวน
-            $price_unit_before_tax = $price_with_tax / (($tax_percent / 100) + 1);
-            $total_before_tax     += ($price_unit_before_tax * $quantity);
+            // คำนวณราคารวม (ราคาสินค้า * จำนวน) แล้วค่อยนำมาถอดภาษี
+            $total_price_with_tax = $price_with_tax * $quantity;
+            $tax_percent          = (float) get_option("tax_percent", 7);
+            
+            $total_price_before_tax = $total_price_with_tax / (($tax_percent / 100) + 1);
+            
+            // แสดงผล
+            $subtotal .= '<br><small style="color: #666; font-size: 0.85em; display: block; white-space: nowrap;">' . 
+                        'ก่อนบวกภาษี: ' . wc_price($total_price_before_tax) . 
+                        '</small>';
+    
+            return $subtotal;
         }
-
-        ?>
-        <tr class="cart-subtotal-before-tax">
-            <div class="fee">
-                <th><?php _e('ยอดรวมก่อนบวกภาษีมูลค่าเพิ่ม ('.$tax_percent.'%)', 'woocommerce' ); ?></th>
-                <td data-title="<?php esc_attr_e( 'ยอดรวมก่อนภาษี', 'woocommerce' ); ?>">
-                    <span class="woocommerce-Price-amount amount">
-                        <?php echo wc_price( $total_before_tax ); ?>
-                    </span>
-                </td>
-            </div>
-        </tr>
-        <?php
+    
+        add_action( 'woocommerce_cart_totals_before_order_total', 'display_cart_totals_before_tax' );
+    
+        function display_cart_totals_before_tax() {
+            // ตรวจสอบ Option (ต้องเป็นโหมดรวมภาษีแล้ว)
+            if ( get_option("tax_option") !== 'in_price' ) return;
+    
+            $cart = WC()->cart;
+            $tax_percent = (float) get_option("tax_percent", 7);
+            $total_before_tax = 0;
+    
+            // ลูปผ่านสินค้าทุกชิ้นในตะกร้าเพื่อถอดภาษีทีละรายการ
+            foreach ( $cart->get_cart() as $cart_item ) {
+                $price_with_tax = $cart_item['data']->get_price();
+                $quantity       = $cart_item['quantity'];
+                
+                // คำนวณราคาต่อชิ้นถอดภาษี แล้วคูณจำนวน
+                $price_unit_before_tax = $price_with_tax / (($tax_percent / 100) + 1);
+                $total_before_tax     += ($price_unit_before_tax * $quantity);
+            }
+    
+            ?>
+            <tr class="cart-subtotal-before-tax">
+                <div class="fee">
+                    <th><?php _e('ยอดรวมก่อนบวกภาษีมูลค่าเพิ่ม ('.$tax_percent.'%)', 'woocommerce' ); ?></th>
+                    <td data-title="<?php esc_attr_e( 'ยอดรวมก่อนภาษี', 'woocommerce' ); ?>">
+                        <span class="woocommerce-Price-amount amount">
+                            <?php echo wc_price( $total_before_tax ); ?>
+                        </span>
+                    </td>
+                </div>
+            </tr>
+            <?php
+        }
     }
 }
 
