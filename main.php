@@ -89,7 +89,7 @@ a.menu-btn {
 }
 </style>
 <div class="white-label-zone no-print">
-    <span style="padding: 60px 10px 60px 40px;float: left;font-size: 60px;">🧾</span>
+    <span style="padding: 40px 10px 40px 40px;float: left;font-size: 60px;">🧾</span>
     <div style="padding: 20px 0;">
         <h1>WordPress Tax & Fee Manager</h1>
         <p>
