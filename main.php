@@ -277,23 +277,28 @@ if(get_option("credit_card_fee_enable") == "yes") {
      * บวกค่าธรรมเนียม 3% เมื่อเลือกชำระเงินผ่านบัตรเครดิต
      */
     add_action('woocommerce_cart_calculate_fees', 'add_credit_card_surcharge', 25);
-    
+
     function add_credit_card_surcharge($cart) {
         if (is_admin() && !defined('DOING_AJAX')) return;
-    
+
         $chosen_payment_method = WC()->session->get('chosen_payment_method');
-    
         $target_methods = array('kasikorn_kpgw'); 
-    
+
         if (in_array($chosen_payment_method, $target_methods)) {
             
             $percentage = 0.03; // 3%
             
-            // คำนวณจากยอดรวมสินค้า (Subtotal) หรือจะใช้ Total ก็ได้แล้วแต่ตกลงกับเจ้านายครับ
-            $surcharge = $cart->get_subtotal() * $percentage;
-    
+            // 1. ดึงราคาสินค้า (Subtotal)
+            $subtotal = $cart->get_subtotal();
+            
+            // 2. ดึงค่าจัดส่ง (Shipping)
+            $shipping = $cart->get_shipping_total();
+            
+            // 3. รวมยอดสินค้า + ค่าจัดส่ง แล้วคำนวณ 3%
+            $surcharge = ($subtotal + $shipping) * $percentage;
+
             // บวกค่าธรรมเนียมเข้าไปในตะกร้า
-            $cart->add_fee(__('ค่าธรรมเนียมชำระผ่านบัตรเครดิต (3%)', 'woocommerce'), $surcharge);
+            $cart->add_fee(__('ค่าธรรมเนียมชำระผ่านบัตรเครดิต (3%)', 'woocommerce'), $surcharge, true); // ใส่ true ถ้าต้องการให้ค่าธรรมเนียมนี้คิด VAT เพิ่มด้วย
         }
     }
 
