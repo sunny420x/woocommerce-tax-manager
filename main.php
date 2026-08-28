@@ -5,6 +5,8 @@
  * Author: Jirakit Pawnsakunrungrot
  * Author URI: https://www.linkedin.com/in/sunny-jirakit
  * Plugin URI: https://github.com/sunny420x/woocommerce-tax-manager
+ * GitHub Plugin URI: https://github.com/sunny420x/woocommerce-tax-manager
+ * Primary Branch: master
  */
 
 function tax_manager_menu()
