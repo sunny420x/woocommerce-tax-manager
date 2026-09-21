@@ -35,8 +35,13 @@ function tax_manager_page() {
     display: flex;
     margin: 0 0 0 -20px;
 }
-.white-label-zone h1,p {
-    padding: 0 20px;
+.white-label-zone {
+    h1 {
+        padding: 0 20px;
+    }
+    p {
+        padding: 0 20px;
+    }
 }
 .container {
     background: #fff; 
@@ -95,9 +100,7 @@ a.menu-btn {
     <img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'plugin-logo.jpg' ); ?>" " alt="Plugin Logo" style="width: 125px; height: auto; float: left; margin: 40px 10px 40px 20px; border-radius: 20px;">
     <div style="padding: 20px 0;">
         <h1>WordPress Tax & Fee Manager</h1>
-        <p>
-        จัดการภาษีมูลค่าเพิ่ม และค่าธรรมเนียมต่าง ๆ
-        </p>
+        <p>จัดการภาษีมูลค่าเพิ่ม และค่าธรรมเนียมต่าง ๆ</p>
         <p>
             <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-tax-manager" target="_blank">https://github.com/sunny420x/woocommerce-tax-manager</a><br>
             <!-- <strong>Documentation:</strong> <a href="https://github.com/sunny420x/woocommerce-tax-manager/wiki" target="_blank">https://github.com/sunny420x/woocommerce-tax-manager/wiki</a><br> -->
