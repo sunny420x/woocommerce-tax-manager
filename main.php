@@ -96,12 +96,12 @@ a.menu-btn {
     <div style="padding: 20px 0;">
         <h1>WordPress Tax & Fee Manager</h1>
         <p>
-        จัดการภาษีมูลค่าเพิ่ม และค่าธรรมเนียมต่าง ๆ<br>
+        จัดการภาษีมูลค่าเพิ่ม และค่าธรรมเนียมต่าง ๆ
+        </p>
         <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-tax-manager" target="_blank">https://github.com/sunny420x/woocommerce-tax-manager</a><br>
         <!-- <strong>Documentation:</strong> <a href="https://github.com/sunny420x/woocommerce-tax-manager/wiki" target="_blank">https://github.com/sunny420x/woocommerce-tax-manager/wiki</a><br> -->
         <strong>Support:</strong> <a href="https://github.com/sunny420x/woocommerce-tax-manager/issues" target="_blank">https://github.com/sunny420x/woocommerce-tax-manager/issues</a><br>
         <strong>Developer:</strong> <a href="https://sunny420x.com" target="_blank">https://sunny420x.com</a>
-        </p>
     </div>
 </div>
 <div class="wrapper" style="display: flex;">
